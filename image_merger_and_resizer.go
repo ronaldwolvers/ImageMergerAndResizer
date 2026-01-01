@@ -192,22 +192,7 @@ func (m mergedImage) ColorModel() color.Model {
 	return m.imageLeft.ColorModel()
 }
 func (m mergedImage) Bounds() image.Rectangle {
-	return m.imageLeft.Bounds()
-}
-
-type mergedColor struct {
-	leftColor  color.Color
-	rightColor color.Color
-}
-
-func (m mergedColor) RGBA() (r, g, b, a uint32) {
-	rLeft, gLeft, bLeft, aLeft := m.leftColor.RGBA()
-	rRight, gRight, bRight, aRight := m.rightColor.RGBA()
-	if aRight == 0 {
-		return rLeft, gLeft, bLeft, aLeft
-	} else {
-		return rRight, gRight, bRight, aRight
-	}
+	return image.Rectangle{Min: m.imageLeft.Bounds().Min, Max: image.Point{X: max(m.imageLeft.Bounds().Max.X, m.imageRight.Bounds().Max.X), Y: max(m.imageLeft.Bounds().Max.Y, m.imageRight.Bounds().Max.Y)}}
 }
 func (m mergedImage) At(x, y int) color.Color {
 	return m.imageRight.At(x, y)
