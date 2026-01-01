@@ -2,7 +2,7 @@
   <configuration default="false" name="go build imagemergerandresizer scale 4" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="ImageMergerAndResizer" />
     <working_directory value="$PROJECT_DIR$/../../ImageMergerAndResizer" />
-    <parameters value="~/Pictures/car_image.png scale 4 ~/Pictures/car_image_scaled.png" />
+    <parameters value="car_image.png scale 4 car_image_scaled.png" />
     <kind value="FILE" />
     <package value="imagemergerandresizer" />
     <directory value="$PROJECT_DIR$" />

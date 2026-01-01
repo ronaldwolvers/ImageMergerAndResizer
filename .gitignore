@@ -1,10 +1,5 @@
 #Binary files
-application.exe
-application
-application_chess.exe
-application_chess
-unrankedchessgobackend
-unrankedchessgobackend.exe
+image_merger_and_resizer
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
@@ -14,21 +9,8 @@ unrankedchessgobackend.exe
 #.DS_Store files
 *.DS_Store
 
-#Sessions
-sessions_dump/
-
-#Logs
-logs/
-
-#IP Blacklist
-ip_blacklist/ip_blacklist
-
-#Files as produced by the `update_latest_app_version.sh` script
-minimum_app_versions/app_versions.go-e
-minimum_app_versions/minimum_app_versions.json-e
-
 #IntelliJ
 .idea/*
 
-#News
-news/pages/*
+#Car image scaled
+car_image_scaled.png
