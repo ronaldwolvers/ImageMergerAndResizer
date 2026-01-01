@@ -218,9 +218,50 @@ func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
 	return scaledImage{image, scaleFactor}, nil
 }
 
-func mergeImage(image image.Image, mergeFilePath string) (image.Image, error) {
-
+func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error) {
 	fmt.Println("Merging image...")
 	fmt.Println("Merge-file path: ", mergeFilePath)
-	return nil, nil
+
+	regexpMatches := compiledRegex.FindSubmatch([]byte(mergeFilePath))
+	if len(regexpMatches) <= 1 {
+		fmt.Println("This file does not have an extension...")
+		os.Exit(1)
+	}
+	fileExtension := string(regexpMatches[1])
+
+	fmt.Println("Reading from file:", mergeFilePath)
+	fileReader, err := os.Open(mergeFilePath)
+	defer func() {
+		if fileReader != nil {
+			err = fileReader.Close()
+			if err != nil {
+				fmt.Println("Error closing file: ", err.Error())
+			}
+		}
+	}()
+
+	var decodedMergeImage image.Image
+	var decodeErr error
+	if strings.ToLower(fileExtension) == "gif" {
+		fmt.Println("Decoding gif...")
+		decodedMergeImage, decodeErr = gif.Decode(fileReader)
+	} else if strings.ToLower(fileExtension) == "jpeg" {
+		fmt.Println("Decoding jpeg...")
+		decodedMergeImage, decodeErr = jpeg.Decode(fileReader)
+	} else if strings.ToLower(fileExtension) == "png" {
+		fmt.Println("Decoding png...")
+		decodedMergeImage, decodeErr = png.Decode(fileReader)
+	} else {
+		fmt.Println("Unknown file extension:", fileExtension)
+		os.Exit(1)
+	}
+
+	if decodeErr != nil {
+		fmt.Println("Error decoding file merge file: ", decodeErr.Error())
+		os.Exit(1)
+	}
+
+	mergedImage := mergedImage{baseImage, decodedMergeImage}
+
+	return mergedImage, nil
 }
