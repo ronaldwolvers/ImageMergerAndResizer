@@ -21,13 +21,13 @@ Now you can scale or merge images.
 Scale an image by calling
 
 ```bash
-./image_merger_and_resizer scale 4 <output_file>
+./image_merger_and_resizer <input_file> scale <scale_factor> [output_file]
 ```
 
 Merge two images by calling
 
 ```bash
-./image_merger_and_resizer merge <merge_file> <output_file>
+./image_merger_and_resizer <input_file> merge <merge_file> [output_file]
 ```
 
 Note that if you specify the `.bmp`, `.jp(e)g`, `.gif` or `.png` file extensions, this application will encode the
