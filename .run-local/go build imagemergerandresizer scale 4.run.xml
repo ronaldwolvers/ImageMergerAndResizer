@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build imagemergerandresizer scale 4" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="ImageMergerAndResizer" />
+    <working_directory value="$PROJECT_DIR$/../../ImageMergerAndResizer" />
+    <parameters value="~/Pictures/car_image.png scale 4" />
+    <kind value="FILE" />
+    <package value="imagemergerandresizer" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/../../ImageMergerAndResizer/image_merger_and_resizer.go" />
+    <method v="2" />
+  </configuration>
+</component>
