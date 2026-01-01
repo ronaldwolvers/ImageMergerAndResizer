@@ -10,6 +10,9 @@ Currently it supports the following image formats:
 
 Currently, this application has not been fully tested, as it was written in an afternoon.
 
+
+### Compiling and running
+
 Compile the application by running
 
 ```bash
