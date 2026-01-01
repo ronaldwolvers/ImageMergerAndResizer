@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/image/bmp"
 )
 
 const fileRegexp = "\\w*\\.(\\w*)"
@@ -79,7 +81,10 @@ func main() {
 
 	var decodedImage image.Image
 	var decodeErr error
-	if strings.ToLower(fileExtension) == "gif" {
+	if strings.ToLower(fileExtension) == "bmp" {
+		fmt.Println("Decoding bmp...")
+		decodedImage, decodeErr = bmp.Decode(fileReader)
+	} else if strings.ToLower(fileExtension) == "gif" {
 		fmt.Println("Decoding gif...")
 		decodedImage, decodeErr = gif.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "jpeg" {
@@ -106,15 +111,15 @@ func main() {
 	fmt.Println("This image has color model: ", decodedImage.ColorModel())
 
 	var resultImage image.Image = nil
-	var encodeErr error = nil
+	var processErr error = nil
 	if programCommand == "scale" {
-		resultImage, encodeErr = scaleImage(decodedImage, scaleFactor)
+		resultImage, processErr = scaleImage(decodedImage, scaleFactor)
 	} else if programCommand == "merge" {
-		resultImage, encodeErr = mergeImage(decodedImage, expandedMergeFile)
+		resultImage, processErr = mergeImage(decodedImage, expandedMergeFile)
 	}
 
-	if encodeErr != nil {
-		fmt.Println("Error encoding image: ", encodeErr.Error())
+	if processErr != nil {
+		fmt.Println("Error encoding image: ", processErr.Error())
 		os.Exit(1)
 	} else if resultImage == nil {
 		fmt.Println("No image was encoded...")
@@ -133,6 +138,7 @@ func main() {
 	var outputFile *os.File
 	if outputFilePath == "" {
 		outputFile = os.Stdout
+		fileExtension = "bmp"
 	} else {
 		outputFile, err = os.Open(outputFilePath)
 		if err != nil {
@@ -143,7 +149,10 @@ func main() {
 	outputFileWriter := bufio.NewWriter(outputFile)
 
 	var encodingError error
-	if strings.ToLower(outputFileExtension) == "gif" {
+	if strings.ToLower(fileExtension) == "bmp" {
+		fmt.Println("Encoding bmp...")
+		encodingError = bmp.Encode(outputFileWriter, resultImage)
+	} else if strings.ToLower(outputFileExtension) == "gif" {
 		fmt.Println("Encoding gif...")
 		encodingError = gif.Encode(outputFileWriter, resultImage, nil)
 	} else if strings.ToLower(outputFileExtension) == "jpeg" {
