@@ -108,7 +108,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("This image has color model: ", decodedImage.ColorModel())
+	fmt.Printf("This image has color model: %X\n", decodedImage.ColorModel())
 
 	var resultImage image.Image = nil
 	var processErr error = nil
@@ -195,7 +195,8 @@ func (s scaledImage) ColorModel() color.Model {
 	return s.originalImage.ColorModel()
 }
 func (s scaledImage) Bounds() image.Rectangle {
-	return image.Rectangle{Min: s.Bounds().Min, Max: image.Point{X: s.originalImage.Bounds().Min.X * s.scaleFactor, Y: s.originalImage.Bounds().Min.Y * s.scaleFactor}}
+	scaledMax := image.Point{X: s.originalImage.Bounds().Max.X / s.scaleFactor, Y: s.originalImage.Bounds().Max.Y / s.scaleFactor}
+	return image.Rectangle{Min: s.originalImage.Bounds().Min, Max: scaledMax}
 }
 func (s scaledImage) At(x, y int) color.Color {
 	return s.originalImage.At(x*s.scaleFactor, y*s.scaleFactor)
