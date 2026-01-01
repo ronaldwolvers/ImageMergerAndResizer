@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"image"
+	"image/color"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
@@ -39,7 +40,7 @@ func main() {
 	var scaleFactor = -1
 	var mergeFile = ""
 	var expandedMergeFile = ""
-	var err error
+	var err error = nil
 
 	if programCommand == "scale" {
 		scaleFactor, err = strconv.Atoi(os.Args[3])
@@ -49,9 +50,7 @@ func main() {
 		}
 	} else if programCommand == "merge" {
 		mergeFile = os.Args[3]
-		currentDir, _ := user.Current()
-		homeDir := currentDir.HomeDir
-		expandedMergeFile = strings.ReplaceAll(mergeFile, "~", homeDir)
+		expandedMergeFile = expandFilePath(mergeFile)
 	}
 
 	regexpMatches := compiledRegex.FindSubmatch([]byte(imageFile))
@@ -62,15 +61,16 @@ func main() {
 
 	fileExtension := string(regexpMatches[1])
 
-	currentDir, _ := user.Current()
-	homeDir := currentDir.HomeDir
-	expandedImageFile := strings.ReplaceAll(imageFile, "~", homeDir)
+	expandedImageFile := expandFilePath(imageFile)
 
 	fmt.Println("Reading from file:", expandedImageFile)
 	fileReader, err := os.Open(expandedImageFile)
 	defer func() {
 		if fileReader != nil {
-			fileReader.Close()
+			err = fileReader.Close()
+			if err != nil {
+				fmt.Println("Error closing file: ", err.Error())
+			}
 		}
 	}()
 
@@ -99,6 +99,7 @@ func main() {
 		fmt.Println("Error decoding file: ", decodeErr.Error())
 		os.Exit(1)
 	}
+
 	if decodedImage == nil {
 		fmt.Println("No image was read from the specified file...")
 		os.Exit(1)
@@ -106,8 +107,8 @@ func main() {
 
 	fmt.Println("This image has color model: ", decodedImage.ColorModel())
 
-	var resultImage image.Image
-	var encodeErr error
+	var resultImage image.Image = nil
+	var encodeErr error = nil
 	if programCommand == "scale" {
 		resultImage, encodeErr = scaleImage(decodedImage, scaleFactor)
 	} else if programCommand == "merge" {
@@ -159,11 +160,62 @@ func main() {
 	}
 }
 
-func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
+func expandFilePath(path string) string {
+	currentDir, _ := user.Current()
+	homeDir := currentDir.HomeDir
+	return strings.ReplaceAll(path, "~", homeDir)
+}
 
+type scaledImage struct {
+	originalImage image.Image
+	scaleFactor   int
+}
+
+func (s scaledImage) ColorModel() color.Model {
+	return s.originalImage.ColorModel()
+}
+func (s scaledImage) Bounds() image.Rectangle {
+	//TODO: Scale the bounds.
+	return s.originalImage.Bounds()
+}
+func (s scaledImage) At(x, y int) color.Color {
+	return s.originalImage.At(x*s.scaleFactor, y*s.scaleFactor)
+}
+
+type mergedImage struct {
+	imageLeft  image.Image
+	imageRight image.Image
+}
+
+func (m mergedImage) ColorModel() color.Model {
+	return m.imageLeft.ColorModel()
+}
+func (m mergedImage) Bounds() image.Rectangle {
+	return m.imageLeft.Bounds()
+}
+
+type mergedColor struct {
+	leftColor  color.Color
+	rightColor color.Color
+}
+
+func (m mergedColor) RGBA() (r, g, b, a uint32) {
+	rLeft, gLeft, bLeft, aLeft := m.leftColor.RGBA()
+	rRight, gRight, bRight, aRight := m.rightColor.RGBA()
+	if aRight == 0 {
+		return rLeft, gLeft, bLeft, aLeft
+	} else {
+		return rRight, gRight, bRight, aRight
+	}
+}
+func (m mergedImage) At(x, y int) color.Color {
+	return m.imageRight.At(x, y)
+}
+
+func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
 	fmt.Println("Scaling image...")
-	fmt.Println("ScaleFactor: ", scaleFactor)
-	return nil, nil
+	fmt.Println("Scale factor: ", scaleFactor)
+	return scaledImage{image, scaleFactor}, nil
 }
 
 func mergeImage(image image.Image, mergeFilePath string) (image.Image, error) {
