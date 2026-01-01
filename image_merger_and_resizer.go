@@ -27,9 +27,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Printing program arguments:")
-	fmt.Println(os.Args)
-
 	if len(os.Args) <= 3 || (strings.ToLower(os.Args[2]) != "scale" && strings.ToLower(os.Args[2]) != "merge") {
 		fmt.Println("Usage: image_merger_and_resizer <image_file> <scale|merge> [scale_factor|merge_file] [output_file]")
 		os.Exit(1)
