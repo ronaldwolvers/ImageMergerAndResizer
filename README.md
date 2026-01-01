@@ -33,5 +33,5 @@ Merge two images by calling
 ./image_merger_and_resizer <input_file> merge <merge_file> [output_file]
 ```
 
-Note that if you specify the `.bmp`, `.jp(e)g`, `.gif` or `.png` file extensions, this application will encode the
+Note that if you specify the `.bmp`, `.jp(e)g`, `.gif` or `.png` file extensions, this application will encode
 the output in the corresponding encoding.
