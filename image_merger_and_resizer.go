@@ -7,11 +7,12 @@ import (
 	"image/jpeg"
 	"image/png"
 	"os"
+	"os/user"
 	"regexp"
 	"strings"
 )
 
-const fileRegexp = "^\\w*\\.(\\w*)$"
+const fileRegexp = "\\w*\\.(\\w*)"
 
 var compiledRegex, regexpCompileErr = regexp.Compile(fileRegexp)
 
@@ -40,8 +41,12 @@ func main() {
 
 	fileExtension := string(regexpMatches[1])
 
-	fmt.Println("Reading from file:", imageFile)
-	fileReader, err := os.Open(imageFile)
+	currentDir, _ := user.Current()
+	homeDir := currentDir.HomeDir
+	expandedImageFile := strings.ReplaceAll(imageFile, "~", homeDir)
+
+	fmt.Println("Reading from file:", expandedImageFile)
+	fileReader, err := os.Open(expandedImageFile)
 	defer func() {
 		if fileReader != nil {
 			fileReader.Close()
@@ -56,10 +61,13 @@ func main() {
 	var image image.Image
 	var decodeErr error
 	if strings.ToLower(fileExtension) == "gif" {
+		fmt.Println("Decoding gif...")
 		image, decodeErr = gif.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "jpeg" {
+		fmt.Println("Decoding jpeg...")
 		image, decodeErr = jpeg.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "png" {
+		fmt.Println("Decoding png...")
 		image, decodeErr = png.Decode(fileReader)
 	} else {
 		fmt.Println("Unknown file extension:", fileExtension)
