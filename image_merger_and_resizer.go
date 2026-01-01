@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -172,11 +173,11 @@ type scaledImage struct {
 }
 
 func (s scaledImage) ColorModel() color.Model {
+	//Use the `color.Model` from the original image - the one on the left-hand side.
 	return s.originalImage.ColorModel()
 }
 func (s scaledImage) Bounds() image.Rectangle {
-	//TODO: Scale the bounds.
-	return s.originalImage.Bounds()
+	return image.Rectangle{Min: s.Bounds().Min, Max: image.Point{X: s.originalImage.Bounds().Min.X * s.scaleFactor, Y: s.originalImage.Bounds().Min.Y * s.scaleFactor}}
 }
 func (s scaledImage) At(x, y int) color.Color {
 	return s.originalImage.At(x*s.scaleFactor, y*s.scaleFactor)
@@ -213,12 +214,14 @@ func (m mergedImage) At(x, y int) color.Color {
 }
 
 func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
+
 	fmt.Println("Scaling image...")
 	fmt.Println("Scale factor: ", scaleFactor)
 	return scaledImage{image, scaleFactor}, nil
 }
 
 func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error) {
+
 	fmt.Println("Merging image...")
 	fmt.Println("Merge-file path: ", mergeFilePath)
 
@@ -253,12 +256,12 @@ func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error
 		decodedMergeImage, decodeErr = png.Decode(fileReader)
 	} else {
 		fmt.Println("Unknown file extension:", fileExtension)
-		os.Exit(1)
+		return nil, errors.New("Unknown file extension: " + fileExtension)
 	}
 
 	if decodeErr != nil {
 		fmt.Println("Error decoding file merge file: ", decodeErr.Error())
-		os.Exit(1)
+		return nil, decodeErr
 	}
 
 	mergedImage := mergedImage{baseImage, decodedMergeImage}
