@@ -134,10 +134,14 @@ func main() {
 		}
 	}
 	var outputFile *os.File
-	outputFile, err = os.Open(outputFilePath)
-	if err != nil {
-		fmt.Println("Error opening file: ", err.Error())
-		os.Exit(1)
+	if outputFilePath == "" {
+		outputFile = os.Stdout
+	} else {
+		outputFile, err = os.Open(outputFilePath)
+		if err != nil {
+			fmt.Println("Error opening file: ", err.Error())
+			os.Exit(1)
+		}
 	}
 	outputFileWriter := bufio.NewWriter(outputFile)
 
@@ -153,11 +157,20 @@ func main() {
 		encodingError = png.Encode(outputFileWriter, resultImage)
 	} else {
 		fmt.Println("Unknown file extension:", fileExtension)
-		fmt.Println("Not applying any encoding...")
+		encodingError = errors.New("Unknown file extension" + fileExtension)
 	}
 
 	if encodingError != nil {
 		fmt.Println("Error encoding file: ", encodingError.Error())
+		os.Exit(1)
+	}
+
+	if programCommand == "merge" && len(os.Args) > 4 {
+		fmt.Println("Successfully merged two images!")
+	}
+
+	if programCommand == "scale" && len(os.Args) > 4 {
+		fmt.Println("Successfully scaled image!")
 	}
 }
 
@@ -173,7 +186,6 @@ type scaledImage struct {
 }
 
 func (s scaledImage) ColorModel() color.Model {
-	//Use the `color.Model` from the original image - the one on the left-hand side.
 	return s.originalImage.ColorModel()
 }
 func (s scaledImage) Bounds() image.Rectangle {
@@ -195,13 +207,21 @@ func (m mergedImage) Bounds() image.Rectangle {
 	return image.Rectangle{Min: m.imageLeft.Bounds().Min, Max: image.Point{X: max(m.imageLeft.Bounds().Max.X, m.imageRight.Bounds().Max.X), Y: max(m.imageLeft.Bounds().Max.Y, m.imageRight.Bounds().Max.Y)}}
 }
 func (m mergedImage) At(x, y int) color.Color {
-	return m.imageRight.At(x, y)
+	leftARGB := m.imageLeft.At(x, y)
+	rightARGB := m.imageRight.At(x, y)
+	_, _, _, a2 := rightARGB.RGBA()
+	if a2 != 0 {
+		return rightARGB
+	} else {
+		return leftARGB
+	}
 }
 
 func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
 
 	fmt.Println("Scaling image...")
 	fmt.Println("Scale factor: ", scaleFactor)
+
 	return scaledImage{image, scaleFactor}, nil
 }
 
