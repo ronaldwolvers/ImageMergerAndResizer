@@ -140,7 +140,7 @@ func main() {
 		outputFile = os.Stdout
 		fileExtension = "bmp"
 	} else {
-		outputFile, err = os.Open(outputFilePath)
+		outputFile, err = os.OpenFile(expandFilePath(outputFilePath), os.O_WRONLY|os.O_CREATE, 0644)
 		if err != nil {
 			fmt.Println("Error opening file: ", err.Error())
 			os.Exit(1)
