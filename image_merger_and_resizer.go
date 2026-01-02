@@ -219,9 +219,9 @@ func (m mergedImage) At(x, y int) color.Color {
 	_, _, _, a2 := rightARGB.RGBA()
 	if a2 != 0 {
 		return rightARGB
-	} else {
-		return leftARGB
 	}
+
+	return leftARGB
 }
 
 func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
