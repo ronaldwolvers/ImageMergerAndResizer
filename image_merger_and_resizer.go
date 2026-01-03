@@ -18,19 +18,49 @@ import (
 	"golang.org/x/image/bmp"
 )
 
+var enableLogging = true
+
+type Logger interface {
+	Printf(format string, a ...any)
+	Println(a ...any)
+}
+
+type loggerStruct struct{}
+
+func (logger loggerStruct) Println(a ...any) {
+	if !enableLogging {
+		return
+	}
+	fmt.Println(a...)
+}
+func (logger loggerStruct) Printf(format string, a ...any) {
+	if !enableLogging {
+		return
+	}
+	fmt.Printf(format, a...)
+}
+
+var logger Logger = loggerStruct{}
+
 const fileRegexp = "\\w*\\.(\\w*)"
 
 var compiledRegex, regexpCompileErr = regexp.Compile(fileRegexp)
 
 func main() {
 
-	if regexpCompileErr != nil {
-		fmt.Println("Error compiling regex: ", regexpCompileErr.Error())
+	if len(os.Args) <= 3 || (strings.ToLower(os.Args[2]) != "scale" && strings.ToLower(os.Args[2]) != "merge") {
+		logger.Println("Usage: image_merger_and_resizer <image_file> <scale|merge> [<scale_factor>|<merge_file>[:offsetX][:offsetY]]" +
+			" [output_file]")
 		os.Exit(1)
 	}
 
-	if len(os.Args) <= 3 || (strings.ToLower(os.Args[2]) != "scale" && strings.ToLower(os.Args[2]) != "merge") {
-		fmt.Println("Usage: image_merger_and_resizer <image_file> <scale|merge> [scale_factor|merge_file] [output_file]")
+	if len(os.Args) == 4 {
+		//Do not log when writing to stdout.
+		enableLogging = false
+	}
+
+	if regexpCompileErr != nil {
+		logger.Println("Error compiling regex: ", regexpCompileErr.Error())
 		os.Exit(1)
 	}
 
@@ -45,7 +75,7 @@ func main() {
 	if programCommand == "scale" {
 		scaleFactor, err = strconv.Atoi(os.Args[3])
 		if err != nil {
-			fmt.Println("Error converting <scale_factor> to a number. Error: ", err.Error())
+			logger.Println("Error converting <scale_factor> to a number. Error: ", err.Error())
 			os.Exit(1)
 		}
 	} else if programCommand == "merge" {
@@ -55,7 +85,7 @@ func main() {
 
 	regexpMatches := compiledRegex.FindSubmatch([]byte(imageFile))
 	if len(regexpMatches) <= 1 {
-		fmt.Println("This file does not have an extension...")
+		logger.Println("This file does not have an extension...")
 		os.Exit(1)
 	}
 
@@ -63,52 +93,52 @@ func main() {
 
 	expandedImageFile := expandFilePath(imageFile)
 
-	fmt.Println("Reading from file:", expandedImageFile)
+	logger.Println("Reading from file:", expandedImageFile)
 	fileReader, err := os.Open(expandedImageFile)
 	defer func() {
 		if fileReader != nil {
 			err = fileReader.Close()
 			if err != nil {
-				fmt.Println("Error closing file: ", err.Error())
+				logger.Println("Error closing file: ", err.Error())
 			}
 		}
 	}()
 
 	if err != nil {
-		fmt.Println("Error opening file: ", err.Error())
+		logger.Println("Error opening file: ", err.Error())
 		os.Exit(1)
 	}
 
 	var decodedImage image.Image
 	var decodeErr error
 	if strings.ToLower(fileExtension) == "bmp" {
-		fmt.Println("Decoding bmp...")
+		logger.Println("Decoding bmp...")
 		decodedImage, decodeErr = bmp.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "gif" {
-		fmt.Println("Decoding gif...")
+		logger.Println("Decoding gif...")
 		decodedImage, decodeErr = gif.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "jpeg" {
-		fmt.Println("Decoding jpeg...")
+		logger.Println("Decoding jpeg...")
 		decodedImage, decodeErr = jpeg.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "png" {
-		fmt.Println("Decoding png...")
+		logger.Println("Decoding png...")
 		decodedImage, decodeErr = png.Decode(fileReader)
 	} else {
-		fmt.Println("Unknown file extension:", fileExtension)
+		logger.Println("Unknown file extension:", fileExtension)
 		os.Exit(1)
 	}
 
 	if decodeErr != nil {
-		fmt.Println("Error decoding file: ", decodeErr.Error())
+		logger.Println("Error decoding file: ", decodeErr.Error())
 		os.Exit(1)
 	}
 
 	if decodedImage == nil {
-		fmt.Println("No image was read from the specified file...")
+		logger.Println("No image was read from the specified file...")
 		os.Exit(1)
 	}
 
-	fmt.Printf("This image has color model: %X\n", decodedImage.ColorModel())
+	logger.Printf("This image has color model: %X\n", decodedImage.ColorModel())
 
 	var resultImage image.Image = nil
 	var processErr error = nil
@@ -119,10 +149,10 @@ func main() {
 	}
 
 	if processErr != nil {
-		fmt.Println("Error encoding image: ", processErr.Error())
+		logger.Println("Error encoding image: ", processErr.Error())
 		os.Exit(1)
 	} else if resultImage == nil {
-		fmt.Println("No image was encoded...")
+		logger.Println("No image was encoded...")
 		os.Exit(1)
 	}
 
@@ -142,7 +172,7 @@ func main() {
 	} else {
 		outputFile, err = os.OpenFile(expandFilePath(outputFilePath), os.O_WRONLY|os.O_CREATE, 0644)
 		if err != nil {
-			fmt.Println("Error opening file: ", err.Error())
+			logger.Println("Error opening file: ", err.Error())
 			os.Exit(1)
 		}
 	}
@@ -150,33 +180,33 @@ func main() {
 
 	var encodingError error
 	if strings.ToLower(fileExtension) == "bmp" {
-		fmt.Println("Encoding bmp...")
+		logger.Println("Encoding bmp...")
 		encodingError = bmp.Encode(outputFileWriter, resultImage)
 	} else if strings.ToLower(outputFileExtension) == "gif" {
-		fmt.Println("Encoding gif...")
+		logger.Println("Encoding gif...")
 		encodingError = gif.Encode(outputFileWriter, resultImage, nil)
 	} else if strings.ToLower(outputFileExtension) == "jpeg" {
-		fmt.Println("Encoding jpeg...")
+		logger.Println("Encoding jpeg...")
 		encodingError = jpeg.Encode(outputFileWriter, resultImage, nil)
 	} else if strings.ToLower(outputFileExtension) == "png" {
-		fmt.Println("Encoding png...")
+		logger.Println("Encoding png...")
 		encodingError = png.Encode(outputFileWriter, resultImage)
 	} else {
-		fmt.Println("Unknown file extension:", fileExtension)
+		logger.Println("Unknown file extension:", fileExtension)
 		encodingError = errors.New("Unknown file extension" + fileExtension)
 	}
 
 	if encodingError != nil {
-		fmt.Println("Error encoding file: ", encodingError.Error())
+		logger.Println("Error encoding file: ", encodingError.Error())
 		os.Exit(1)
 	}
 
 	if programCommand == "merge" && len(os.Args) > 4 {
-		fmt.Println("Successfully merged two images!")
+		logger.Println("Successfully merged two images!")
 	}
 
 	if programCommand == "scale" && len(os.Args) > 4 {
-		fmt.Println("Successfully scaled image!")
+		logger.Println("Successfully scaled image!")
 	}
 }
 
@@ -226,31 +256,31 @@ func (m mergedImage) At(x, y int) color.Color {
 
 func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
 
-	fmt.Println("Scaling image...")
-	fmt.Println("Scale factor: ", scaleFactor)
+	logger.Println("Scaling image...")
+	logger.Println("Scale factor: ", scaleFactor)
 
 	return scaledImage{image, scaleFactor}, nil
 }
 
 func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error) {
 
-	fmt.Println("Merging image...")
-	fmt.Println("Merge-file path: ", mergeFilePath)
+	logger.Println("Merging image...")
+	logger.Println("Merge-file path: ", mergeFilePath)
 
 	regexpMatches := compiledRegex.FindSubmatch([]byte(mergeFilePath))
 	if len(regexpMatches) <= 1 {
-		fmt.Println("This file does not have an extension...")
+		logger.Println("This file does not have an extension...")
 		os.Exit(1)
 	}
 	fileExtension := string(regexpMatches[1])
 
-	fmt.Println("Reading from file:", mergeFilePath)
+	logger.Println("Reading from file:", mergeFilePath)
 	fileReader, err := os.Open(mergeFilePath)
 	defer func() {
 		if fileReader != nil {
 			err = fileReader.Close()
 			if err != nil {
-				fmt.Println("Error closing file: ", err.Error())
+				logger.Println("Error closing file: ", err.Error())
 			}
 		}
 	}()
@@ -258,21 +288,21 @@ func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error
 	var decodedMergeImage image.Image
 	var decodeErr error
 	if strings.ToLower(fileExtension) == "gif" {
-		fmt.Println("Decoding gif...")
+		logger.Println("Decoding gif...")
 		decodedMergeImage, decodeErr = gif.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "jpeg" {
-		fmt.Println("Decoding jpeg...")
+		logger.Println("Decoding jpeg...")
 		decodedMergeImage, decodeErr = jpeg.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "png" {
-		fmt.Println("Decoding png...")
+		logger.Println("Decoding png...")
 		decodedMergeImage, decodeErr = png.Decode(fileReader)
 	} else {
-		fmt.Println("Unknown file extension:", fileExtension)
+		logger.Println("Unknown file extension:", fileExtension)
 		return nil, errors.New("Unknown file extension: " + fileExtension)
 	}
 
 	if decodeErr != nil {
-		fmt.Println("Error decoding file merge file: ", decodeErr.Error())
+		logger.Println("Error decoding file merge file: ", decodeErr.Error())
 		return nil, decodeErr
 	}
 
