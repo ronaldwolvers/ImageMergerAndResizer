@@ -30,7 +30,7 @@ Scale an image by calling
 Merge two images by calling
 
 ```bash
-./image_merger_and_resizer <input_file> merge <merge_file> [output_file]
+./image_merger_and_resizer <input_file> merge[:offsetX][:offsetY] <merge_file> [output_file]
 ```
 
 Note that if you specify the `.bmp`, `.jp(e)g`, `.gif` or `.png` file extensions, this application will encode

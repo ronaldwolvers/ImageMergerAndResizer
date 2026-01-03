@@ -43,12 +43,24 @@ func (logger loggerStruct) Printf(format string, a ...any) {
 var logger Logger = loggerStruct{}
 
 const fileRegexp = "\\w*\\.(\\w*)"
+const mergeRegExp = "merge(\\:(\\d*))(\\:(\\d*))"
 
 var compiledRegex, regexpCompileErr = regexp.Compile(fileRegexp)
+var compiledMergeRegex, mergeRegexpCompileErr = regexp.Compile(mergeRegExp)
 
 func main() {
 
-	if len(os.Args) <= 3 || (strings.ToLower(os.Args[2]) != "scale" && strings.ToLower(os.Args[2]) != "merge") {
+	if regexpCompileErr != nil {
+		logger.Println("Error compiling regex: ", regexpCompileErr.Error())
+		os.Exit(1)
+	}
+
+	if mergeRegexpCompileErr != nil {
+		logger.Println("Error compiling regex: ", mergeRegexpCompileErr.Error())
+		os.Exit(1)
+	}
+
+	if len(os.Args) <= 3 || (strings.ToLower(os.Args[2]) != "scale" && !compiledMergeRegex.MatchString(os.Args[2])) {
 		logger.Println("Usage: image_merger_and_resizer <image_file> <scale|merge> [<scale_factor>|<merge_file>[:offsetX][:offsetY]]" +
 			" [output_file]")
 		os.Exit(1)
@@ -57,11 +69,6 @@ func main() {
 	if len(os.Args) == 4 {
 		//Do not log when writing to stdout.
 		enableLogging = false
-	}
-
-	if regexpCompileErr != nil {
-		logger.Println("Error compiling regex: ", regexpCompileErr.Error())
-		os.Exit(1)
 	}
 
 	imageFile := os.Args[1]
@@ -78,7 +85,7 @@ func main() {
 			logger.Println("Error converting <scale_factor> to a number. Error: ", err.Error())
 			os.Exit(1)
 		}
-	} else if programCommand == "merge" {
+	} else if compiledMergeRegex.MatchString(programCommand) {
 		mergeFile = os.Args[3]
 		expandedMergeFile = expandFilePath(mergeFile)
 	}
@@ -144,8 +151,13 @@ func main() {
 	var processErr error = nil
 	if programCommand == "scale" {
 		resultImage, processErr = scaleImage(decodedImage, scaleFactor)
-	} else if programCommand == "merge" {
-		resultImage, processErr = mergeImage(decodedImage, expandedMergeFile)
+	} else if compiledMergeRegex.MatchString(os.Args[2]) {
+		var offsetX = 0
+		var offsetY = 0
+		regexpMatches := compiledMergeRegex.FindSubmatch([]byte(os.Args[2]))
+		offsetX, _ = strconv.Atoi(string(regexpMatches[2]))
+		offsetY, _ = strconv.Atoi(string(regexpMatches[4]))
+		resultImage, processErr = mergeImage(decodedImage, expandedMergeFile, offsetX, offsetY)
 	}
 
 	if processErr != nil {
@@ -201,11 +213,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if programCommand == "merge" && len(os.Args) > 4 {
+	if compiledMergeRegex.MatchString(programCommand) {
 		logger.Println("Successfully merged two images!")
 	}
 
-	if programCommand == "scale" && len(os.Args) > 4 {
+	if programCommand == "scale" {
 		logger.Println("Successfully scaled image!")
 	}
 }
@@ -233,8 +245,10 @@ func (s scaledImage) At(x, y int) color.Color {
 }
 
 type mergedImage struct {
-	imageLeft  image.Image
-	imageRight image.Image
+	imageLeft         image.Image
+	imageRight        image.Image
+	imageRightOffsetX int
+	imageRightOffsetY int
 }
 
 func (m mergedImage) ColorModel() color.Model {
@@ -245,11 +259,11 @@ func (m mergedImage) Bounds() image.Rectangle {
 }
 func (m mergedImage) At(x, y int) color.Color {
 	leftARGB := m.imageLeft.At(x, y)
-	rightARGB := m.imageRight.At(x, y)
-	_, _, _, a2 := rightARGB.RGBA()
-	if a2 != 0 {
-		return rightARGB
-	}
+	//rightARGB := m.imageRight.At(x, y)
+	//_, _, _,  := rightARGB.RGBA()
+	//if a2 != 0 {
+	//	return rightARGB
+	//}
 
 	return leftARGB
 }
@@ -262,7 +276,7 @@ func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
 	return scaledImage{image, scaleFactor}, nil
 }
 
-func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error) {
+func mergeImage(baseImage image.Image, mergeFilePath string, offsetX int, offsetY int) (image.Image, error) {
 
 	logger.Println("Merging image...")
 	logger.Println("Merge-file path: ", mergeFilePath)
@@ -290,7 +304,7 @@ func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error
 	if strings.ToLower(fileExtension) == "gif" {
 		logger.Println("Decoding gif...")
 		decodedMergeImage, decodeErr = gif.Decode(fileReader)
-	} else if strings.ToLower(fileExtension) == "jpeg" {
+	} else if strings.ToLower(fileExtension) == "jpeg" || strings.ToLower(fileExtension) == "jpg" {
 		logger.Println("Decoding jpeg...")
 		decodedMergeImage, decodeErr = jpeg.Decode(fileReader)
 	} else if strings.ToLower(fileExtension) == "png" {
@@ -306,7 +320,7 @@ func mergeImage(baseImage image.Image, mergeFilePath string) (image.Image, error
 		return nil, decodeErr
 	}
 
-	mergedImage := mergedImage{baseImage, decodedMergeImage}
+	mergedImage := mergedImage{baseImage, decodedMergeImage, offsetX, offsetY}
 
 	return mergedImage, nil
 }
