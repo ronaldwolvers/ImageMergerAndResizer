@@ -18,6 +18,7 @@ import (
 	"golang.org/x/image/bmp"
 )
 
+// Set this flag to 'false' to disable all logging.
 var enableLogging = true
 
 type Logger interface {
@@ -43,15 +44,15 @@ func (logger loggerStruct) Printf(format string, a ...any) {
 var logger Logger = loggerStruct{}
 
 const fileRegexp = "\\w*\\.(\\w*)"
-const mergeRegExp = "merge(\\:(\\d*))(\\:(\\d*))"
+const mergeRegexp = "merge(\\:(\\d*))(\\:(\\d*))"
 
-var compiledRegex, regexpCompileErr = regexp.Compile(fileRegexp)
-var compiledMergeRegex, mergeRegexpCompileErr = regexp.Compile(mergeRegExp)
+var compiledFileRegex, fileRegexpCompileErr = regexp.Compile(fileRegexp)
+var compiledMergeRegex, mergeRegexpCompileErr = regexp.Compile(mergeRegexp)
 
 func main() {
 
-	if regexpCompileErr != nil {
-		logger.Println("Error compiling regex: ", regexpCompileErr.Error())
+	if fileRegexpCompileErr != nil {
+		logger.Println("Error compiling regex: ", fileRegexpCompileErr.Error())
 		os.Exit(1)
 	}
 
@@ -90,7 +91,7 @@ func main() {
 		expandedMergeFile = expandFilePath(mergeFile)
 	}
 
-	regexpMatches := compiledRegex.FindSubmatch([]byte(imageFile))
+	regexpMatches := compiledFileRegex.FindSubmatch([]byte(imageFile))
 	if len(regexpMatches) <= 1 {
 		logger.Println("This file does not have an extension...")
 		os.Exit(1)
@@ -172,7 +173,7 @@ func main() {
 	var outputFileExtension string
 	if len(os.Args) >= 5 {
 		outputFilePath = os.Args[4]
-		regexpMatches = compiledRegex.FindSubmatch([]byte(outputFilePath))
+		regexpMatches = compiledFileRegex.FindSubmatch([]byte(outputFilePath))
 		if len(regexpMatches) > 1 {
 			outputFileExtension = string(regexpMatches[1])
 		}
@@ -259,7 +260,10 @@ func (m mergedImage) Bounds() image.Rectangle {
 }
 func (m mergedImage) At(x, y int) color.Color {
 	leftARGB := m.imageLeft.At(x, y)
-	//rightARGB := m.imageRight.At(x, y)
+	rightARGB := m.imageRight.At(x, y)
+
+	logger.Printf("leftARGB: %v", leftARGB)
+	logger.Printf("rightARGB: %v", rightARGB)
 	//_, _, _,  := rightARGB.RGBA()
 	//if a2 != 0 {
 	//	return rightARGB
@@ -281,7 +285,7 @@ func mergeImage(baseImage image.Image, mergeFilePath string, offsetX int, offset
 	logger.Println("Merging image...")
 	logger.Println("Merge-file path: ", mergeFilePath)
 
-	regexpMatches := compiledRegex.FindSubmatch([]byte(mergeFilePath))
+	regexpMatches := compiledFileRegex.FindSubmatch([]byte(mergeFilePath))
 	if len(regexpMatches) <= 1 {
 		logger.Println("This file does not have an extension...")
 		os.Exit(1)
