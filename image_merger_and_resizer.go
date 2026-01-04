@@ -258,18 +258,31 @@ func (m mergedImage) ColorModel() color.Model {
 func (m mergedImage) Bounds() image.Rectangle {
 	return image.Rectangle{Min: m.imageLeft.Bounds().Min, Max: image.Point{X: max(m.imageLeft.Bounds().Max.X, m.imageRight.Bounds().Max.X), Y: max(m.imageLeft.Bounds().Max.Y, m.imageRight.Bounds().Max.Y)}}
 }
+
+type argbStruct struct {
+	red   uint16
+	green uint16
+	blue  uint16
+	alpha uint16
+}
+
+func (a argbStruct) RGBA() (uint32, uint32, uint32, uint32) {
+	return uint32(a.red), uint32(a.green), uint32(a.blue), uint32(a.alpha)
+}
+
 func (m mergedImage) At(x, y int) color.Color {
-	leftARGB := m.imageLeft.At(x, y)
-	//rightARGB := m.imageRight.At(x, y)
+	leftColor := m.imageLeft.At(x, y)
+	return leftColor
+	//rightColor := m.imageRight.At(x, y)
+	//logger.Printf("leftColor: %v", leftColor)
+	//logger.Printf("rightColor: %v", rightColor)
 
-	//logger.Printf("leftARGB: %v", leftARGB)
-	//logger.Printf("rightARGB: %v", rightARGB)
-	//_, _, _,  := rightARGB.RGBA()
-	//if a2 != 0 {
-	//	return rightARGB
-	//}
+	//rightR, rightG, rightB, rightA := rightARGB.RGBA()
+	//normalizedRightRGBA := argbStruct{uint16(rightR), uint16(rightG), uint16(rightB), uint16(rightA)}
+	//return normalizedRightRGBA
 
-	return leftARGB
+	emptyARGB := argbStruct{45000, 45000, 8000, 8000}
+	return emptyARGB
 }
 
 func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
