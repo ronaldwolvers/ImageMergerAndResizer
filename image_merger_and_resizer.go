@@ -260,10 +260,10 @@ func (m mergedImage) Bounds() image.Rectangle {
 }
 func (m mergedImage) At(x, y int) color.Color {
 	leftARGB := m.imageLeft.At(x, y)
-	rightARGB := m.imageRight.At(x, y)
+	//rightARGB := m.imageRight.At(x, y)
 
-	logger.Printf("leftARGB: %v", leftARGB)
-	logger.Printf("rightARGB: %v", rightARGB)
+	//logger.Printf("leftARGB: %v", leftARGB)
+	//logger.Printf("rightARGB: %v", rightARGB)
 	//_, _, _,  := rightARGB.RGBA()
 	//if a2 != 0 {
 	//	return rightARGB
