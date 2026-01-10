@@ -72,8 +72,10 @@ func main() {
 		enableLogging = false
 	}
 
-	imageFile := os.Args[1]
-	programCommand := os.Args[2]
+	var imageFile = ""
+	imageFile = os.Args[1]
+	var programCommand = ""
+	programCommand = os.Args[2]
 
 	var scaleFactor = -1
 	var mergeFile = ""
@@ -91,18 +93,22 @@ func main() {
 		expandedMergeFile = expandFilePath(mergeFile)
 	}
 
-	regexpMatches := compiledFileRegex.FindSubmatch([]byte(imageFile))
+	var regexpMatches [][]byte = nil
+	regexpMatches = compiledFileRegex.FindSubmatch([]byte(imageFile))
 	if len(regexpMatches) <= 1 {
 		logger.Println("This file does not have an extension...")
 		os.Exit(1)
 	}
 
-	fileExtension := string(regexpMatches[1])
+	var fileExtension = ""
+	fileExtension = string(regexpMatches[1])
 
-	expandedImageFile := expandFilePath(imageFile)
+	var expandedImageFile = ""
+	expandedImageFile = expandFilePath(imageFile)
 
+	var fileReader *os.File
 	logger.Println("Reading from file:", expandedImageFile)
-	fileReader, err := os.Open(expandedImageFile)
+	fileReader, err = os.Open(expandedImageFile)
 	defer func() {
 		if fileReader != nil {
 			err = fileReader.Close()
@@ -155,7 +161,7 @@ func main() {
 	} else if compiledMergeRegex.MatchString(os.Args[2]) {
 		var offsetX = 0
 		var offsetY = 0
-		regexpMatches := compiledMergeRegex.FindSubmatch([]byte(os.Args[2]))
+		regexpMatches = compiledMergeRegex.FindSubmatch([]byte(os.Args[2]))
 		offsetX, _ = strconv.Atoi(string(regexpMatches[2]))
 		offsetY, _ = strconv.Atoi(string(regexpMatches[4]))
 		resultImage, processErr = mergeImage(decodedImage, expandedMergeFile, offsetX, offsetY)
@@ -189,7 +195,8 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	outputFileWriter := bufio.NewWriter(outputFile)
+	var outputFileWriter *bufio.Writer
+	outputFileWriter = bufio.NewWriter(outputFile)
 
 	var encodingError error
 	if strings.ToLower(fileExtension) == "bmp" {
@@ -224,8 +231,10 @@ func main() {
 }
 
 func expandFilePath(path string) string {
-	currentDir, _ := user.Current()
-	homeDir := currentDir.HomeDir
+	var currentDir *user.User = nil
+	currentDir, _ = user.Current()
+	var homeDir = ""
+	homeDir = currentDir.HomeDir
 	return strings.ReplaceAll(path, "~", homeDir)
 }
 
@@ -238,7 +247,8 @@ func (s scaledImage) ColorModel() color.Model {
 	return s.originalImage.ColorModel()
 }
 func (s scaledImage) Bounds() image.Rectangle {
-	scaledMax := image.Point{X: s.originalImage.Bounds().Max.X / s.scaleFactor, Y: s.originalImage.Bounds().Max.Y / s.scaleFactor}
+	var scaledMax image.Point
+	scaledMax = image.Point{X: s.originalImage.Bounds().Max.X / s.scaleFactor, Y: s.originalImage.Bounds().Max.Y / s.scaleFactor}
 	return image.Rectangle{Min: s.originalImage.Bounds().Min, Max: scaledMax}
 }
 func (s scaledImage) At(x, y int) color.Color {
@@ -271,7 +281,8 @@ func (a argbStruct) RGBA() (uint32, uint32, uint32, uint32) {
 }
 
 func (m mergedImage) At(x, y int) color.Color {
-	leftColor := m.imageLeft.At(x, y)
+	var leftColor color.Color
+	leftColor = m.imageLeft.At(x, y)
 	return leftColor
 	//rightColor := m.imageRight.At(x, y)
 	//logger.Printf("leftColor: %v", leftColor)
@@ -281,7 +292,7 @@ func (m mergedImage) At(x, y int) color.Color {
 	//normalizedRightRGBA := argbStruct{uint16(rightR), uint16(rightG), uint16(rightB), uint16(rightA)}
 	//return normalizedRightRGBA
 
-	emptyARGB := argbStruct{45000, 45000, 8000, 8000}
+	var emptyARGB = argbStruct{45000, 45000, 8000, 8000}
 	return emptyARGB
 }
 
@@ -298,15 +309,19 @@ func mergeImage(baseImage image.Image, mergeFilePath string, offsetX int, offset
 	logger.Println("Merging image...")
 	logger.Println("Merge-file path: ", mergeFilePath)
 
-	regexpMatches := compiledFileRegex.FindSubmatch([]byte(mergeFilePath))
+	var regexpMatches [][]byte
+	regexpMatches = compiledFileRegex.FindSubmatch([]byte(mergeFilePath))
 	if len(regexpMatches) <= 1 {
 		logger.Println("This file does not have an extension...")
 		os.Exit(1)
 	}
-	fileExtension := string(regexpMatches[1])
+	var fileExtension = ""
+	fileExtension = string(regexpMatches[1])
 
 	logger.Println("Reading from file:", mergeFilePath)
-	fileReader, err := os.Open(mergeFilePath)
+	var fileReader *os.File = nil
+	var err error = nil
+	fileReader, err = os.Open(mergeFilePath)
 	defer func() {
 		if fileReader != nil {
 			err = fileReader.Close()
@@ -337,7 +352,8 @@ func mergeImage(baseImage image.Image, mergeFilePath string, offsetX int, offset
 		return nil, decodeErr
 	}
 
-	mergedImage := mergedImage{baseImage, decodedMergeImage, offsetX, offsetY}
+	var mergedImage_ mergedImage
+	mergedImage_ = mergedImage{baseImage, decodedMergeImage, offsetX, offsetY}
 
-	return mergedImage, nil
+	return mergedImage_, nil
 }
