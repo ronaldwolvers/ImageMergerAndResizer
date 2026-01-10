@@ -8,8 +8,22 @@ Currently it supports the following image formats:
 * GIF
 * PNG
 
-Currently, this application has not been fully tested, as it was written in an afternoon.
+There are two example run configurations in the `.run-local` directory.
 
+
+### Current state
+
+The application has been tested to successfully work with PNG input files. The other formats listed are supported,
+but have not been tested at the time of writing.
+File formats that will be added in the near future:
+
+* TIFF
+* WebP
+
+Please file an issue or email me at [ahcwolvers@gmail.com](mailto:ahcwolvers@gmail.com) if there are other file formats
+you would like to see supported, or have any questions or suggestions about this application.
+
+&nbsp;
 
 ### Compiling and running
 
@@ -35,3 +49,6 @@ Merge two images by calling
 
 Note that if you specify the `.bmp`, `.jp(e)g`, `.gif` or `.png` file extensions, this application will encode
 the output in the corresponding encoding.
+
+Also note that if you do not specify an output file, this application
+will print directly to stdout.

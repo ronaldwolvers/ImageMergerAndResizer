@@ -266,34 +266,30 @@ func (m mergedImage) ColorModel() color.Model {
 	return m.imageLeft.ColorModel()
 }
 func (m mergedImage) Bounds() image.Rectangle {
-	return image.Rectangle{Min: m.imageLeft.Bounds().Min, Max: image.Point{X: max(m.imageLeft.Bounds().Max.X, m.imageRight.Bounds().Max.X), Y: max(m.imageLeft.Bounds().Max.Y, m.imageRight.Bounds().Max.Y)}}
-}
-
-type argbStruct struct {
-	red   uint16
-	green uint16
-	blue  uint16
-	alpha uint16
-}
-
-func (a argbStruct) RGBA() (uint32, uint32, uint32, uint32) {
-	return uint32(a.red), uint32(a.green), uint32(a.blue), uint32(a.alpha)
+	return m.imageLeft.Bounds()
 }
 
 func (m mergedImage) At(x, y int) color.Color {
 	var leftColor color.Color
 	leftColor = m.imageLeft.At(x, y)
+
+	if x >= m.imageRight.Bounds().Min.X+m.imageRightOffsetX && x <= m.imageRight.Bounds().Max.X-m.imageRightOffsetX &&
+		y >= m.imageRight.Bounds().Min.Y+m.imageRightOffsetY && y <= m.imageRight.Bounds().Max.Y-m.imageRightOffsetY {
+
+		var rightColor color.Color
+		rightColor = m.imageRight.At(x, y)
+		var rightColorConverted color.Color
+		rightColorConverted = m.imageLeft.ColorModel().Convert(rightColor)
+
+		var rightColorAlpha uint32
+		_, _, _, rightColorAlpha = rightColorConverted.RGBA()
+
+		if rightColorAlpha > 0 {
+			return rightColorConverted
+		}
+	}
+
 	return leftColor
-	//rightColor := m.imageRight.At(x, y)
-	//logger.Printf("leftColor: %v", leftColor)
-	//logger.Printf("rightColor: %v", rightColor)
-
-	//rightR, rightG, rightB, rightA := rightARGB.RGBA()
-	//normalizedRightRGBA := argbStruct{uint16(rightR), uint16(rightG), uint16(rightB), uint16(rightA)}
-	//return normalizedRightRGBA
-
-	var emptyARGB = argbStruct{45000, 45000, 8000, 8000}
-	return emptyARGB
 }
 
 func scaleImage(image image.Image, scaleFactor int) (image.Image, error) {
