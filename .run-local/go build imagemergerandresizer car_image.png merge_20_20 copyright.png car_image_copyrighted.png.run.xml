@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="go build imagemergerandresizer merge car_image.png merge:20:20 copyright.png car_image_copyrighted.png" type="GoApplicationRunConfiguration" factoryName="Go Application">
+  <configuration default="false" name="go build imagemergerandresizer car_image.png merge:20:20 copyright.png car_image_copyrighted.png" type="GoApplicationRunConfiguration" factoryName="Go Application">
     <module name="ImageMergerAndResizer" />
     <working_directory value="$PROJECT_DIR$/../../ImageMergerAndResizer" />
     <parameters value="car_image.png merge:20:20 copyright.png car_image_copyrighted.png" />
